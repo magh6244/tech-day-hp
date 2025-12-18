@@ -6,17 +6,27 @@ import { Calendar, MapPin, CheckCircle, Send, Shield, Server, Laptop, Settings, 
 
 // --- CONFIGURACIÓN DE FIREBASE ---
 // Reemplaza los valores vacíos con los datos de tu consola de Firebase (Paso 1.4 de la guía)
-const firebaseConfig = typeof __firebase_config !== 'undefined' 
-  ? JSON.parse(__firebase_config) 
-  : {
-      apiKey: "", 
-      authDomain: "",
-      projectId: "",
-      storageBucket: "",
-      messagingSenderId: "",
-      appId: ""
-    };
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyBeXNB09pqi7BbNMMfCwg8eiuBSn5XDbfs",
+  authDomain: "tech-day-cuantico-hp.firebaseapp.com",
+  projectId: "tech-day-cuantico-hp",
+  storageBucket: "tech-day-cuantico-hp.firebasestorage.app",
+  messagingSenderId: "1039572277326",
+  appId: "1:1039572277326:web:0d26d25a2babe58c9acb1f",
+  measurementId: "G-RN7ZMVJX9N"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 // Inicialización de servicios
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
