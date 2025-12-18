@@ -40,7 +40,7 @@ const firebaseConfig = {
   measurementId: "G-RN7ZMVJX9N"
 };
 // Inicialización ÚNICA de Firebase
-const isConfigValid = firebaseConfig.apiKey && firebaseConfig.apiKey !== "TU_API_KEY";
+const isConfigValid = firebaseConfig.apiKey && firebaseConfig.apiKey !== "AIzaSyBeXNB09pqi7BbNMMfCwg8eiuBSn5XDbfs";
 const app = isConfigValid ? initializeApp(firebaseConfig) : null;
 const auth = app ? getAuth(app) : null;
 const db = app ? getFirestore(app) : null;
