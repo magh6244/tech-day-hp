@@ -28,8 +28,9 @@ import {
   Loader2 
 } from 'lucide-react';
 
-// --- CONFIGURACIÓN DE FIREBASE ---
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+// ========================================================
+// 1. MODIFICA ESTA SECCIÓN CON TUS DATOS DE FIREBASE
+// ========================================================
 const firebaseConfig = {
   apiKey: "AIzaSyBeXNB09pqi7BbNMMfCwg8eiuBSn5XDbfs",
   authDomain: "tech-day-cuantico-hp.firebaseapp.com",
@@ -38,9 +39,12 @@ const firebaseConfig = {
   messagingSenderId: "1039572277326",
   appId: "1:1039572277326:web:0d26d25a2babe58c9acb1f",
   measurementId: "G-RN7ZMVJX9N"
-};
-// Inicialización ÚNICA de Firebase
+};// ========================================================
+
+// Validación para activar el formulario solo cuando pongas tus llaves
 const isConfigValid = firebaseConfig.apiKey && firebaseConfig.apiKey !== "AIzaSyBeXNB09pqi7BbNMMfCwg8eiuBSn5XDbfs";
+
+// Inicialización de Firebase
 const app = isConfigValid ? initializeApp(firebaseConfig) : null;
 const auth = app ? getAuth(app) : null;
 const db = app ? getFirestore(app) : null;
@@ -68,8 +72,9 @@ const App = () => {
   });
 
   useEffect(() => {
+    // Si no se han configurado las credenciales, mostramos el aviso
     if (!isConfigValid) {
-      setError("Configuración de Firebase incompleta. Edite src/App.jsx con sus credenciales.");
+      setError("Configuración de Firebase incompleta. Edite src/App.jsx con sus credenciales de la consola de Firebase.");
       return;
     }
 
@@ -78,7 +83,7 @@ const App = () => {
         await signInAnonymously(auth);
       } catch (err) {
         console.error("Error de autenticación:", err);
-        setError("Error de conexión segura con Firebase.");
+        setError("Error de conexión segura. Verifique que el método 'Anónimo' esté habilitado en Firebase Auth.");
       }
     };
     
@@ -105,6 +110,7 @@ const App = () => {
     setError(null);
 
     try {
+      // Los datos se guardarán en la colección: artifacts/hp-tech-day-2026/public/data/registrations
       const registrationsRef = collection(db, 'artifacts', appId, 'public', 'data', 'registrations');
       
       await addDoc(registrationsRef, {
@@ -117,7 +123,7 @@ const App = () => {
       setSubmitted(true);
     } catch (err) {
       console.error("Error al guardar:", err);
-      setError("Error al guardar en la base de datos. Revise las 'Rules' en Firebase.");
+      setError("Error al guardar en la base de datos. Asegúrese de haber pegado las 'Rules' correctas en la pestaña de Firestore.");
     } finally {
       setLoading(false);
     }
@@ -198,6 +204,8 @@ const App = () => {
           <div className="lg:col-span-2">
             <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100 p-8 md:p-10">
               <h2 className="text-3xl font-bold text-slate-800 mb-8 border-b pb-4">Registro de Invitados</h2>
+              
+              {/* Mensaje de error para el usuario si algo falta */}
               {error && (
                 <div className={`mb-8 p-4 border-l-4 rounded-r-lg flex items-center gap-3 bg-red-50 border-red-500 text-red-700`}>
                   <AlertCircle size={24}/>
@@ -252,7 +260,7 @@ const App = () => {
                   <button type="submit" disabled={loading || !user} className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-black py-5 rounded-2xl shadow-xl transition-all flex items-center justify-center gap-3 text-lg uppercase tracking-widest transform hover:-translate-y-1">
                     {loading ? <>Procesando... <Loader2 className="animate-spin" size={24} /></> : <>Confirmar Registro en HP <Send size={22} /></>}
                   </button>
-                  {!user && !error && <p className="text-[10px] text-slate-400 mt-4 animate-pulse">Conectando con base de datos...</p>}
+                  {!user && !error && isConfigValid && <p className="text-[10px] text-slate-400 mt-4 animate-pulse">Estableciendo conexión segura...</p>}
                 </div>
               </form>
             </div>
