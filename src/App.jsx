@@ -39,11 +39,11 @@ const firebaseConfig = {
   appId: "1:1039572277326:web:0d26d25a2babe58c9acb1f",
   measurementId: "G-RN7ZMVJX9N"
 };
-
 // Inicialización ÚNICA de Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+const isConfigValid = firebaseConfig.apiKey && firebaseConfig.apiKey !== "TU_API_KEY";
+const app = isConfigValid ? initializeApp(firebaseConfig) : null;
+const auth = app ? getAuth(app) : null;
+const db = app ? getFirestore(app) : null;
 const appId = 'hp-tech-day-2026';
 
 const App = () => {
@@ -67,14 +67,18 @@ const App = () => {
     projectTimeframe: ''
   });
 
-  // Efecto para manejar la autenticación anónima necesaria para Firestore
   useEffect(() => {
+    if (!isConfigValid) {
+      setError("Configuración de Firebase incompleta. Edite src/App.jsx con sus credenciales.");
+      return;
+    }
+
     const initAuth = async () => {
       try {
         await signInAnonymously(auth);
       } catch (err) {
         console.error("Error de autenticación:", err);
-        setError("Error de conexión segura. Por favor, verifique su configuración.");
+        setError("Error de conexión segura con Firebase.");
       }
     };
     
@@ -92,8 +96,8 @@ const App = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!user) {
-      setError("Sesión no establecida. Por favor, intente de nuevo.");
+    if (!user || !db) {
+      setError("La conexión con la base de datos no está lista.");
       return;
     }
 
@@ -101,7 +105,6 @@ const App = () => {
     setError(null);
 
     try {
-      // Ruta estricta para guardar los datos en Firestore
       const registrationsRef = collection(db, 'artifacts', appId, 'public', 'data', 'registrations');
       
       await addDoc(registrationsRef, {
@@ -114,7 +117,7 @@ const App = () => {
       setSubmitted(true);
     } catch (err) {
       console.error("Error al guardar:", err);
-      setError("No se pudo completar el registro. Verifique las reglas de su base de datos.");
+      setError("Error al guardar en la base de datos. Revise las 'Rules' en Firebase.");
     } finally {
       setLoading(false);
     }
@@ -128,12 +131,12 @@ const App = () => {
             <CheckCircle className="text-green-600 w-12 h-12" />
           </div>
           <h2 className="text-2xl font-bold mb-2 text-slate-800">¡Registro Exitoso!</h2>
-          <p className="text-slate-600 mb-6">
-            Gracias, <strong>{formData.fullName}</strong>. Su información ha sido recibida para el Tech Day en las instalaciones de HP.
+          <p className="text-slate-600 mb-6 font-medium">
+            Gracias, {formData.fullName}. Su información ha sido recibida para el Tech Day en HP Zapopan.
           </p>
           <button 
             onClick={() => setSubmitted(false)}
-            className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg"
+            className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg active:scale-95"
           >
             Registrar a otro asistente
           </button>
@@ -144,11 +147,10 @@ const App = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900 pb-12">
-      {/* Hero Section */}
       <header className="bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white py-14 px-4 shadow-xl border-b border-blue-500/20">
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center gap-10">
           <div className="flex-1 text-center md:text-left">
-            <h1 className="text-4xl md:text-5xl font-extrabold mb-2 italic tracking-tight uppercase">Tech Day 2026</h1>
+            <h1 className="text-4xl md:text-6xl font-black mb-3 italic tracking-tight uppercase">Tech Day 2026</h1>
             <p className="text-xl md:text-2xl text-blue-300 font-light mb-8">Cuantico + HP: Forjando Infraestructuras Rentables</p>
             
             <div className="space-y-5 text-left inline-block md:block">
@@ -173,8 +175,9 @@ const App = () => {
             </div>
           </div>
           <div className="flex items-center gap-6 bg-white/10 p-8 rounded-3xl backdrop-blur-md border border-white/20">
-             <div className="text-center"><div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-blue-900 font-black text-xl">HP</div></div>
-             <div className="text-center font-black tracking-tighter italic text-xl text-white">CUANTICO</div>
+             <div className="text-center font-black text-2xl">HP</div>
+             <div className="text-2xl font-thin text-white/30">|</div>
+             <div className="text-center font-black tracking-tighter italic text-xl">CUANTICO</div>
           </div>
         </div>
       </header>
@@ -185,8 +188,8 @@ const App = () => {
             <div className="bg-white p-6 rounded-2xl shadow-lg border border-slate-100">
               <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-slate-800"><Info className="text-blue-600" size={20} /> Agenda:</h3>
               <ul className="space-y-4 text-sm text-slate-600 font-medium">
-                <li>• Showcase de Novedades HP 2026</li>
-                <li>• Estrategias de infraestructura rentable</li>
+                <li>• Portafolio HP 2026</li>
+                <li>• Estrategias de rentabilidad</li>
                 <li>• Networking especializado</li>
               </ul>
             </div>
@@ -194,8 +197,13 @@ const App = () => {
 
           <div className="lg:col-span-2">
             <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100 p-8 md:p-10">
-              <h2 className="text-3xl font-bold text-slate-800 mb-8 border-b pb-4 tracking-tight">Registro de Invitados</h2>
-              {error && <div className="mb-8 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 flex items-center gap-3"><AlertCircle size={24}/><p className="text-sm font-semibold">{error}</p></div>}
+              <h2 className="text-3xl font-bold text-slate-800 mb-8 border-b pb-4">Registro de Invitados</h2>
+              {error && (
+                <div className={`mb-8 p-4 border-l-4 rounded-r-lg flex items-center gap-3 bg-red-50 border-red-500 text-red-700`}>
+                  <AlertCircle size={24}/>
+                  <p className="text-sm font-semibold">{error}</p>
+                </div>
+              )}
               
               <form onSubmit={handleSubmit} className="space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -240,11 +248,11 @@ const App = () => {
                   </div>
                 </div>
 
-                <div className="pt-6 border-t border-slate-100">
-                  <button type="submit" disabled={loading || !user} className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-black py-5 rounded-2xl shadow-xl transition-all flex items-center justify-center gap-3 text-lg uppercase tracking-widest transform hover:-translate-y-1 active:scale-95">
+                <div className="pt-6 border-t border-slate-100 text-center">
+                  <button type="submit" disabled={loading || !user} className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-black py-5 rounded-2xl shadow-xl transition-all flex items-center justify-center gap-3 text-lg uppercase tracking-widest transform hover:-translate-y-1">
                     {loading ? <>Procesando... <Loader2 className="animate-spin" size={24} /></> : <>Confirmar Registro en HP <Send size={22} /></>}
                   </button>
-                  {!user && !error && <p className="text-center text-[10px] text-slate-400 mt-4 animate-pulse italic">Estableciendo conexión segura...</p>}
+                  {!user && !error && <p className="text-[10px] text-slate-400 mt-4 animate-pulse">Conectando con base de datos...</p>}
                 </div>
               </form>
             </div>
