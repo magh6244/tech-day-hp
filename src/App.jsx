@@ -42,7 +42,7 @@ const firebaseConfig = {
 };// ========================================================
 
 // Validación para activar el formulario solo cuando pongas tus llaves
-const isConfigValid = firebaseConfig.apiKey && firebaseConfig.apiKey !== "AIzaSyBeXNB09pqi7BbNMMfCwg8eiuBSn5XDbfs";
+const isConfigValid = firebaseConfig.apiKey && firebaseConfig.apiKey !=="AIzaSyBeXNB09pqi7BbNMMfCwg8eiuBSn5XDbfs";
 
 // Inicialización de Firebase
 const app = isConfigValid ? initializeApp(firebaseConfig) : null;
