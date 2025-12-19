@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 
 // ========================================================
-// 1. MODIFICA ESTA SECCIÓN CON TUS DATOS DE FIREBASE
+// CONFIGURACIÓN DE FIREBASE
 // ========================================================
 const firebaseConfig = {
   apiKey: "AIzaSyBeXNB09pqi7BbNMMfCwg8eiuBSn5XDbfs",
@@ -39,15 +39,28 @@ const firebaseConfig = {
   messagingSenderId: "1039572277326",
   appId: "1:1039572277326:web:0d26d25a2babe58c9acb1f",
   measurementId: "G-RN7ZMVJX9N"
-};// ========================================================
+};
+// ========================================================
 
-// Validación para activar el formulario solo cuando pongas tus llaves
-const isConfigValid = firebaseConfig.apiKey && firebaseConfig.apiKey !=="AIzaSyBeXNB09pqi7BbNMMfCwg8eiuBSn5XDbfs";
+// CORRECCIÓN: Simplificamos la validación para que solo verifique que existe una llave
+const isConfigValid = firebaseConfig.apiKey && firebaseConfig.apiKey.length > 0;
 
 // Inicialización de Firebase
-const app = isConfigValid ? initializeApp(firebaseConfig) : null;
-const auth = app ? getAuth(app) : null;
-const db = app ? getFirestore(app) : null;
+// Usamos un bloque try-catch para evitar que la app se rompa si la config tiene algún error
+let app = null;
+let auth = null;
+let db = null;
+
+try {
+  if (isConfigValid) {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+  }
+} catch (e) {
+  console.error("Error inicializando Firebase:", e);
+}
+
 const appId = 'hp-tech-day-2026';
 
 const App = () => {
@@ -72,9 +85,13 @@ const App = () => {
   });
 
   useEffect(() => {
-    // Si no se han configurado las credenciales, mostramos el aviso
     if (!isConfigValid) {
-      setError("Configuración de Firebase incompleta. Edite src/App.jsx con sus credenciales de la consola de Firebase.");
+      setError("Falta la API Key en la configuración.");
+      return;
+    }
+
+    if (!auth) {
+      setError("Error interno: Firebase no se pudo inicializar.");
       return;
     }
 
@@ -83,7 +100,7 @@ const App = () => {
         await signInAnonymously(auth);
       } catch (err) {
         console.error("Error de autenticación:", err);
-        setError("Error de conexión segura. Verifique que el método 'Anónimo' esté habilitado en Firebase Auth.");
+        setError("No se pudo establecer una conexión segura. Verifique que 'Anonymous' esté habilitado en Firebase Authentication.");
       }
     };
     
@@ -102,7 +119,7 @@ const App = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!user || !db) {
-      setError("La conexión con la base de datos no está lista.");
+      setError("La conexión con la base de datos no está lista. Intente recargar la página.");
       return;
     }
 
@@ -110,7 +127,6 @@ const App = () => {
     setError(null);
 
     try {
-      // Los datos se guardarán en la colección: artifacts/hp-tech-day-2026/public/data/registrations
       const registrationsRef = collection(db, 'artifacts', appId, 'public', 'data', 'registrations');
       
       await addDoc(registrationsRef, {
@@ -123,7 +139,12 @@ const App = () => {
       setSubmitted(true);
     } catch (err) {
       console.error("Error al guardar:", err);
-      setError("Error al guardar en la base de datos. Asegúrese de haber pegado las 'Rules' correctas en la pestaña de Firestore.");
+      // Mensaje de error amigable para el usuario
+      if (err.code === 'permission-denied') {
+        setError("Permiso denegado. Verifique las Reglas (Rules) en Firestore Database.");
+      } else {
+        setError("Ocurrió un error al guardar. Intente nuevamente.");
+      }
     } finally {
       setLoading(false);
     }
@@ -205,7 +226,6 @@ const App = () => {
             <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100 p-8 md:p-10">
               <h2 className="text-3xl font-bold text-slate-800 mb-8 border-b pb-4">Registro de Invitados</h2>
               
-              {/* Mensaje de error para el usuario si algo falta */}
               {error && (
                 <div className={`mb-8 p-4 border-l-4 rounded-r-lg flex items-center gap-3 bg-red-50 border-red-500 text-red-700`}>
                   <AlertCircle size={24}/>
@@ -257,7 +277,7 @@ const App = () => {
                 </div>
 
                 <div className="pt-6 border-t border-slate-100 text-center">
-                  <button type="submit" disabled={loading || !user} className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-black py-5 rounded-2xl shadow-xl transition-all flex items-center justify-center gap-3 text-lg uppercase tracking-widest transform hover:-translate-y-1">
+                  <button type="submit" disabled={loading || !user} className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-black py-5 rounded-2xl shadow-xl transition-all flex items-center justify-center gap-3 text-lg uppercase tracking-widest transform hover:-translate-y-1 active:scale-95">
                     {loading ? <>Procesando... <Loader2 className="animate-spin" size={24} /></> : <>Confirmar Registro en HP <Send size={22} /></>}
                   </button>
                   {!user && !error && isConfigValid && <p className="text-[10px] text-slate-400 mt-4 animate-pulse">Estableciendo conexión segura...</p>}
