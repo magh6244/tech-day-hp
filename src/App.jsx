@@ -25,7 +25,10 @@ import {
   Clock, 
   Info, 
   AlertCircle, 
-  Loader2 
+  Loader2,
+  Monitor,
+  Phone,
+  Building 
 } from 'lucide-react';
 
 // ========================================================
@@ -42,11 +45,10 @@ const firebaseConfig = {
 };
 // ========================================================
 
-// CORRECCIÓN: Simplificamos la validación para que solo verifique que existe una llave
+// Validación para activar el formulario
 const isConfigValid = firebaseConfig.apiKey && firebaseConfig.apiKey.length > 0;
 
 // Inicialización de Firebase
-// Usamos un bloque try-catch para evitar que la app se rompa si la config tiene algún error
 let app = null;
 let auth = null;
 let db = null;
@@ -74,9 +76,11 @@ const App = () => {
     company: '',
     jobTitle: '',
     email: '',
-    phone: '',
+    mobilePhone: '', 
+    officePhone: '', 
+    extension: '',   
     attendance: 'confirmado',
-    interestArea: '',
+    interestArea: [], // Cambiado a arreglo para múltiples opciones
     installedBase: '',
     physicalServers: '',
     currentManufacturer: '',
@@ -116,6 +120,21 @@ const App = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  // Manejador especial para checkboxes múltiples
+  const handleInterestChange = (e) => {
+    const { value, checked } = e.target;
+    setFormData(prev => {
+      const currentInterests = prev.interestArea || [];
+      if (checked) {
+        // Agregar si se marca
+        return { ...prev, interestArea: [...currentInterests, value] };
+      } else {
+        // Quitar si se desmarca
+        return { ...prev, interestArea: currentInterests.filter(item => item !== value) };
+      }
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!user || !db) {
@@ -139,7 +158,6 @@ const App = () => {
       setSubmitted(true);
     } catch (err) {
       console.error("Error al guardar:", err);
-      // Mensaje de error amigable para el usuario
       if (err.code === 'permission-denied') {
         setError("Permiso denegado. Verifique las Reglas (Rules) en Firestore Database.");
       } else {
@@ -234,19 +252,53 @@ const App = () => {
               )}
               
               <form onSubmit={handleSubmit} className="space-y-8">
+                {/* DATOS DE CONTACTO */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <input type="text" name="fullName" required className="w-full px-4 py-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50/50" placeholder="Nombre Completo *" onChange={handleInputChange} />
                   <input type="text" name="company" required className="w-full px-4 py-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50/50" placeholder="Compañía *" onChange={handleInputChange} />
                   <input type="text" name="jobTitle" required className="w-full px-4 py-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50/50" placeholder="Puesto / Cargo *" onChange={handleInputChange} />
                   <input type="email" name="email" required className="w-full px-4 py-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50/50" placeholder="Email Corporativo *" onChange={handleInputChange} />
+                  
+                  {/* NUEVOS CAMPOS DE TELÉFONO */}
+                  <div className="relative">
+                    <Phone className="absolute left-4 top-3.5 text-slate-400" size={18} />
+                    <input 
+                      type="tel" 
+                      name="mobilePhone" 
+                      required 
+                      className="w-full pl-12 pr-4 py-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50/50" 
+                      placeholder="Teléfono Móvil *" 
+                      onChange={handleInputChange} 
+                    />
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <div className="relative w-2/3">
+                      <Building className="absolute left-4 top-3.5 text-slate-400" size={18} />
+                      <input 
+                        type="tel" 
+                        name="officePhone" 
+                        className="w-full pl-12 pr-4 py-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50/50" 
+                        placeholder="Tel. Oficina" 
+                        onChange={handleInputChange} 
+                      />
+                    </div>
+                    <input 
+                      type="text" 
+                      name="extension" 
+                      className="w-1/3 px-4 py-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50/50" 
+                      placeholder="Ext." 
+                      onChange={handleInputChange} 
+                    />
+                  </div>
                 </div>
 
                 <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-6 shadow-inner">
                   <h4 className="text-xs font-black text-blue-600 uppercase flex items-center gap-2 tracking-widest"><Hash size={16} /> Perfil Técnico Actual</h4>
-                  <input type="text" name="currentManufacturer" required className="w-full px-4 py-3 border border-slate-200 rounded-xl outline-none bg-white focus:ring-2 focus:ring-blue-500" placeholder="¿A qué fabricante compra actualmente? *" onChange={handleInputChange} />
+                  <input type="text" name="currentManufacturer" required className="w-full px-4 py-3 border border-slate-200 rounded-xl outline-none bg-white focus:ring-2 focus:ring-blue-500" placeholder="¿Cuales son la o las marcas que tienes actualmente? Ejemplo HP, Lenovo, DELL, Apple *" onChange={handleInputChange} />
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div className="relative"><Laptop className="absolute left-4 top-3.5 text-slate-400" size={18} /><input type="number" name="installedBase" className="w-full pl-12 pr-4 py-3 border border-slate-200 rounded-xl outline-none bg-white" placeholder="Equipos de cómputo" onChange={handleInputChange} /></div>
-                    <div className="relative"><Server className="absolute left-4 top-3.5 text-slate-400" size={18} /><input type="number" name="physicalServers" className="w-full pl-12 pr-4 py-3 border border-slate-200 rounded-xl outline-none bg-white" placeholder="Servidores físicos" onChange={handleInputChange} /></div>
+                    <div className="relative"><Laptop className="absolute left-4 top-3.5 text-slate-400" size={18} /><input type="number" name="installedBase" className="w-full pl-12 pr-4 py-3 border border-slate-200 rounded-xl outline-none bg-white" placeholder="Cant. Equipos de cómputo" onChange={handleInputChange} /></div>
+                    <div className="relative"><Server className="absolute left-4 top-3.5 text-slate-400" size={18} /><input type="number" name="physicalServers" className="w-full pl-12 pr-4 py-3 border border-slate-200 rounded-xl outline-none bg-white" placeholder="Cant. Servidores físicos" onChange={handleInputChange} /></div>
                   </div>
                 </div>
 
@@ -254,7 +306,7 @@ const App = () => {
                   <h4 className="text-xs font-black text-blue-600 uppercase flex items-center gap-2 tracking-widest"><Briefcase size={16} /> Planeación</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-2">
-                      <label className="text-sm font-bold text-slate-700 italic">¿Proyecto de renovación activo?</label>
+                      <label className="text-sm font-bold text-slate-700 italic">¿Cuentas con un proyecto de renovación activo?</label>
                       <div className="flex gap-8">
                         {['Si', 'No'].map((opt) => (
                           <label key={opt} className="flex items-center gap-2 cursor-pointer group">
@@ -273,6 +325,36 @@ const App = () => {
                         <option value="12">12 Meses</option>
                       </select>
                     </div>
+                  </div>
+                </div>
+
+                {/* ÁREAS DE INTERÉS - AHORA CON CHECKBOXES */}
+                <div className="space-y-3">
+                  <label className="block text-sm font-bold text-slate-700">Áreas de mayor interés para el evento (Seleccione las que apliquen) *</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {[
+                      { id: 'computo', label: 'Cómputo', icon: <Laptop size={16}/> },
+                      { id: 'workstations', label: 'Workstations', icon: <Monitor size={16}/> },
+                      { id: 'datacenter', label: 'Centro de Datos', icon: <Server size={16}/> },
+                      { id: 'servicios', label: 'Servicios TI', icon: <Settings size={16}/> }
+                    ].map(option => (
+                      <label 
+                        key={option.id} 
+                        className={`flex items-center p-3 border rounded-xl cursor-pointer transition-all ${formData.interestArea.includes(option.id) ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-blue-300'}`}
+                      >
+                        <input 
+                          type="checkbox" 
+                          name="interestArea" 
+                          value={option.id}
+                          checked={formData.interestArea.includes(option.id)}
+                          className="w-4 h-4 text-blue-600 focus:ring-blue-500 rounded"
+                          onChange={handleInterestChange}
+                        />
+                        <span className="ml-3 text-sm font-medium text-slate-700 flex items-center gap-2">
+                          {option.icon} {option.label}
+                        </span>
+                      </label>
+                    ))}
                   </div>
                 </div>
 
