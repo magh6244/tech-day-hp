@@ -28,7 +28,9 @@ import {
   Loader2,
   Monitor,
   Phone,
-  Building 
+  Building,
+  Download,
+  Mail
 } from 'lucide-react';
 
 // ========================================================
@@ -80,7 +82,7 @@ const App = () => {
     officePhone: '', 
     extension: '',   
     attendance: 'confirmado',
-    interestArea: [], // Cambiado a arreglo para múltiples opciones
+    interestArea: [], 
     installedBase: '',
     physicalServers: '',
     currentManufacturer: '',
@@ -120,19 +122,63 @@ const App = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Manejador especial para checkboxes múltiples
   const handleInterestChange = (e) => {
     const { value, checked } = e.target;
     setFormData(prev => {
       const currentInterests = prev.interestArea || [];
       if (checked) {
-        // Agregar si se marca
         return { ...prev, interestArea: [...currentInterests, value] };
       } else {
-        // Quitar si se desmarca
         return { ...prev, interestArea: currentInterests.filter(item => item !== value) };
       }
     });
+  };
+
+  // --- FUNCIONES PARA CALENDARIO ---
+  const eventDetails = {
+    title: "Tech Day HP & Cuantico 2026",
+    description: "Evento exclusivo para clientes sobre el nuevo portafolio HP y estrategias de infraestructura rentable.",
+    location: "HP Inc México, Av. Camino al ITESO 8270, El Mante, 45608 Zapopan, Jal.",
+    startTime: "20260210T090000", // Formato YYYYMMDDTHHmmss
+    endTime: "20260210T120000"
+  };
+
+  const downloadICS = () => {
+    const icsContent = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Cuantico//TechDay//ES
+BEGIN:VEVENT
+UID:${Date.now()}@cuantico.mx
+DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z
+DTSTART:${eventDetails.startTime}
+DTEND:${eventDetails.endTime}
+SUMMARY:${eventDetails.title}
+DESCRIPTION:${eventDetails.description}
+LOCATION:${eventDetails.location}
+END:VEVENT
+END:VCALENDAR`;
+
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob);
+    link.setAttribute('download', 'TechDay_HP_Cuantico.ics');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const addToOutlookWeb = () => {
+    const baseUrl = "https://outlook.live.com/calendar/0/deeplink/compose";
+    const params = new URLSearchParams({
+      subject: eventDetails.title,
+      body: eventDetails.description,
+      location: eventDetails.location,
+      startdt: "2026-02-10T09:00:00",
+      enddt: "2026-02-10T12:00:00",
+      path: "/calendar/action/compose",
+      rru: "addevent"
+    });
+    window.open(`${baseUrl}?${params.toString()}`, '_blank');
   };
 
   const handleSubmit = async (e) => {
@@ -170,18 +216,42 @@ const App = () => {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8 text-center border-t-8 border-blue-600">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-sans">
+        <div className="max-w-lg w-full bg-white rounded-2xl shadow-2xl p-8 text-center border-t-8 border-blue-600">
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="text-green-600 w-12 h-12" />
           </div>
-          <h2 className="text-2xl font-bold mb-2 text-slate-800">¡Registro Exitoso!</h2>
-          <p className="text-slate-600 mb-6 font-medium">
-            Gracias, {formData.fullName}. Su información ha sido recibida para el Tech Day en HP Zapopan.
+          <h2 className="text-2xl font-bold mb-2 text-slate-800">¡Registro Confirmado!</h2>
+          <p className="text-slate-600 mb-6">
+            Gracias, <strong>{formData.fullName}</strong>. Hemos asegurado tu lugar para el Tech Day en HP Zapopan.
           </p>
+          
+          <div className="bg-blue-50 rounded-xl p-6 mb-8 border border-blue-100">
+            <h3 className="text-blue-900 font-bold mb-4 flex items-center justify-center gap-2">
+              <Calendar size={20}/> Agendar en Calendario
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button 
+                onClick={addToOutlookWeb}
+                className="flex items-center justify-center gap-2 bg-white text-blue-700 border border-blue-200 py-3 px-4 rounded-lg hover:bg-blue-100 transition-colors font-semibold text-sm shadow-sm"
+              >
+                <Mail size={16} /> Abrir Outlook Web
+              </button>
+              <button 
+                onClick={downloadICS}
+                className="flex items-center justify-center gap-2 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-semibold text-sm shadow-md"
+              >
+                <Download size={16} /> Descargar .ICS
+              </button>
+            </div>
+            <p className="text-xs text-blue-400 mt-3">
+              * El archivo .ICS es compatible con Outlook Desktop, Apple Mail y Google Calendar.
+            </p>
+          </div>
+
           <button 
             onClick={() => setSubmitted(false)}
-            className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg active:scale-95"
+            className="text-slate-400 hover:text-slate-600 text-sm font-medium underline decoration-slate-300 underline-offset-4"
           >
             Registrar a otro asistente
           </button>
